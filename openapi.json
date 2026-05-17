@@ -1176,6 +1176,55 @@
                 }
             }
         },
+        "/api/help-requests/reason-codes": {
+            "get": {
+                "tags": [
+                    "help-requests"
+                ],
+                "summary": "Get Help Request Reason Codes",
+                "operationId": "get_help_request_reason_codes_api_help_requests_reason_codes_get",
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Authorization"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HelpRequestReasonCodesResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/help-requests/{help_request_id}": {
             "get": {
                 "tags": [
@@ -3378,6 +3427,57 @@
                         }
                     },
                     {
+                        "name": "settlement-statuses",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MaterialReportSettlementStatus"
+                                    }
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Settlement-Statuses"
+                        }
+                    },
+                    {
+                        "name": "help-request-type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/HelpRequestType"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Help-Request-Type"
+                        }
+                    },
+                    {
+                        "name": "awaiting-material-settlement-review",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "boolean"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Awaiting-Material-Settlement-Review"
+                        }
+                    },
+                    {
                         "name": "Authorization",
                         "in": "header",
                         "required": false,
@@ -4082,6 +4182,55 @@
                         "content": {
                             "application/json": {
                                 "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/partners/dashboard": {
+            "get": {
+                "tags": [
+                    "partners"
+                ],
+                "summary": "Get Partner Dashboard",
+                "operationId": "get_partner_dashboard_api_partners_dashboard_get",
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Authorization"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PartnerDashboardResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
                             }
                         }
                     }
@@ -5541,6 +5690,24 @@
                 ],
                 "title": "CancelHelpRequestRequest"
             },
+            "CodeLabelResponse": {
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "title": "Code"
+                    },
+                    "label": {
+                        "type": "string",
+                        "title": "Label"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "code",
+                    "label"
+                ],
+                "title": "CodeLabelResponse"
+            },
             "CompleteMediaUploadResponse": {
                 "properties": {
                     "media_id": {
@@ -6319,14 +6486,14 @@
                 "properties": {
                     "material": {
                         "items": {
-                            "$ref": "#/components/schemas/MaterialHelpRequestCategory"
+                            "$ref": "#/components/schemas/CodeLabelResponse"
                         },
                         "type": "array",
                         "title": "Material"
                     },
                     "social": {
                         "items": {
-                            "$ref": "#/components/schemas/SocialHelpRequestCategory"
+                            "$ref": "#/components/schemas/CodeLabelResponse"
                         },
                         "type": "array",
                         "title": "Social"
@@ -6338,6 +6505,46 @@
                     "social"
                 ],
                 "title": "HelpRequestCategoriesResponse"
+            },
+            "HelpRequestReasonCodesByTypeResponse": {
+                "properties": {
+                    "cancellation": {
+                        "items": {
+                            "$ref": "#/components/schemas/CodeLabelResponse"
+                        },
+                        "type": "array",
+                        "title": "Cancellation"
+                    },
+                    "interruption": {
+                        "items": {
+                            "$ref": "#/components/schemas/CodeLabelResponse"
+                        },
+                        "type": "array",
+                        "title": "Interruption"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "cancellation",
+                    "interruption"
+                ],
+                "title": "HelpRequestReasonCodesByTypeResponse"
+            },
+            "HelpRequestReasonCodesResponse": {
+                "properties": {
+                    "material": {
+                        "$ref": "#/components/schemas/HelpRequestReasonCodesByTypeResponse"
+                    },
+                    "social": {
+                        "$ref": "#/components/schemas/HelpRequestReasonCodesByTypeResponse"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "material",
+                    "social"
+                ],
+                "title": "HelpRequestReasonCodesResponse"
             },
             "HelpRequestType": {
                 "type": "string",
@@ -7556,6 +7763,89 @@
                     "items"
                 ],
                 "title": "PaginatedResponse[VolunteerSocialParticipationResponse]"
+            },
+            "PartnerDashboardQueuesResponse": {
+                "properties": {
+                    "help_requests_pending_moderation": {
+                        "$ref": "#/components/schemas/PartnerDashboardSplitCounterResponse"
+                    },
+                    "reports_pending_moderation": {
+                        "$ref": "#/components/schemas/PartnerDashboardSplitCounterResponse"
+                    },
+                    "verifications_pending_moderation": {
+                        "$ref": "#/components/schemas/PartnerDashboardVerificationCounterResponse"
+                    },
+                    "material_reports_awaiting_settlement_review": {
+                        "type": "integer",
+                        "title": "Material Reports Awaiting Settlement Review"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "help_requests_pending_moderation",
+                    "reports_pending_moderation",
+                    "verifications_pending_moderation",
+                    "material_reports_awaiting_settlement_review"
+                ],
+                "title": "PartnerDashboardQueuesResponse"
+            },
+            "PartnerDashboardResponse": {
+                "properties": {
+                    "queues": {
+                        "$ref": "#/components/schemas/PartnerDashboardQueuesResponse"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "queues"
+                ],
+                "title": "PartnerDashboardResponse"
+            },
+            "PartnerDashboardSplitCounterResponse": {
+                "properties": {
+                    "material": {
+                        "type": "integer",
+                        "title": "Material"
+                    },
+                    "social": {
+                        "type": "integer",
+                        "title": "Social"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "material",
+                    "social",
+                    "total"
+                ],
+                "title": "PartnerDashboardSplitCounterResponse"
+            },
+            "PartnerDashboardVerificationCounterResponse": {
+                "properties": {
+                    "beneficiaries": {
+                        "type": "integer",
+                        "title": "Beneficiaries"
+                    },
+                    "volunteers": {
+                        "type": "integer",
+                        "title": "Volunteers"
+                    },
+                    "total": {
+                        "type": "integer",
+                        "title": "Total"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "beneficiaries",
+                    "volunteers",
+                    "total"
+                ],
+                "title": "PartnerDashboardVerificationCounterResponse"
             },
             "PayoutMethodResponse": {
                 "properties": {
@@ -9176,6 +9466,224 @@
             },
             "SocialHelpRequestVersionResponse": {
                 "properties": {
+                    "closed_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Closed At"
+                    },
+                    "interrupted_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Interrupted At"
+                    },
+                    "interrupted_by_user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Interrupted By User Id"
+                    },
+                    "interruption_reason": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Interruption Reason"
+                    },
+                    "interruption_reason_code": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Interruption Reason Code"
+                    },
+                    "interruption_initiator": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Interruption Initiator"
+                    },
+                    "cancellation_reason": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cancellation Reason"
+                    },
+                    "cancelled_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cancelled At"
+                    },
+                    "cancelled_by_user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cancelled By User Id"
+                    },
+                    "cancellation_reason_code": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cancellation Reason Code"
+                    },
+                    "cancellation_initiator": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cancellation Initiator"
+                    },
+                    "rejected_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Rejected At"
+                    },
+                    "rejected_by_user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Rejected By User Id"
+                    },
+                    "rejection_reason": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Rejection Reason"
+                    },
+                    "returned_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Returned At"
+                    },
+                    "returned_by_user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Returned By User Id"
+                    },
+                    "return_reason": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Return Reason"
+                    },
+                    "approved_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Approved At"
+                    },
+                    "approved_by_user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Approved By User Id"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "title": "Created At"
+                    },
                     "type": {
                         "type": "string",
                         "title": "Type"
@@ -9252,93 +9760,11 @@
                             }
                         ],
                         "title": "Place Name"
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "title": "Created At"
-                    },
-                    "approved_at": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Approved At"
-                    },
-                    "approved_by_user_id": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                                "format": "uuid"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Approved By User Id"
-                    },
-                    "rejected_at": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Rejected At"
-                    },
-                    "rejected_by_user_id": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                                "format": "uuid"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Rejected By User Id"
-                    },
-                    "rejection_reason": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Rejection Reason"
-                    },
-                    "cancellation_reason": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Cancellation Reason"
-                    },
-                    "cancelled_at": {
-                        "anyOf": [
-                            {
-                                "type": "string"
-                            },
-                            {
-                                "type": "null"
-                            }
-                        ],
-                        "title": "Cancelled At"
                     }
                 },
                 "type": "object",
                 "required": [
+                    "created_at",
                     "type",
                     "version_number",
                     "title",
@@ -9353,8 +9779,7 @@
                     "preferred_skills",
                     "latitude",
                     "longitude",
-                    "address_text",
-                    "created_at"
+                    "address_text"
                 ],
                 "title": "SocialHelpRequestVersionResponse"
             },
