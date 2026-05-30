@@ -22,6 +22,16 @@ export const formatMoney = (kopeks?: number | null) => {
 
 export const truncateId = (id?: string | null) => (id ? `${id.slice(0, 8)}...${id.slice(-4)}` : '—')
 
+export const formatDistanceKm = (km?: number | null) => {
+  if (km === undefined || km === null) {
+    return '—'
+  }
+
+  return `${km.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} км`
+}
+
+export const normalizeTelHref = (phone: string) => phone.replace(/[^\d+]/g, '')
+
 export const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) {
     return error.message
