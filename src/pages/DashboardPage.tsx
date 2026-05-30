@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
+import { CheckSquareOutlined, DollarCircleOutlined, ExclamationCircleOutlined, FileTextOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
+import { Card, Col, Row, Space, Statistic, Typography } from 'antd'
 import { Link } from 'react-router-dom'
 import { partnersApi } from '../api/endpoints'
 import { PageHeader } from '../components/PageHeader'
 import { StateBlock } from '../components/StateBlock'
+import { useRealtimeRefresh } from '../hooks/useRealtimeRefresh'
 import type { PartnerDashboardResponse, PartnerDashboardSplitCounter, PartnerDashboardVerificationCounter } from '../types/api'
 import { getErrorMessage } from '../utils/format'
 
@@ -11,6 +15,8 @@ const cards = [
     title: 'Заявки',
     description: 'Очередь материальных и социальных заявок на модерации.',
     href: '/requests',
+    accent: 'blue',
+    icon: <CheckSquareOutlined />,
     queueKey: 'help_requests_pending_moderation',
     statLabel: 'ожидают решения',
   },
@@ -18,6 +24,8 @@ const cards = [
     title: 'Отчёты',
     description: 'Проверка результатов помощи и возврат на доработку.',
     href: '/reports',
+    accent: 'violet',
+    icon: <FileTextOutlined />,
     queueKey: 'reports_pending_moderation',
     statLabel: 'на проверке',
   },
@@ -25,17 +33,31 @@ const cards = [
     title: 'Верификации',
     description: 'Проверка данных пользователей и решений по документам.',
     href: '/verifications',
+    accent: 'green',
+    icon: <SafetyCertificateOutlined />,
     queueKey: 'verifications_pending_moderation',
     statLabel: 'на модерации',
+  },
+  {
+    title: 'Жалобы',
+    description: 'Рассмотрение жалоб на участников социальных заявок.',
+    href: '/complaints',
+    accent: 'amber',
+    icon: <ExclamationCircleOutlined />,
+    queueKey: 'complaints_open',
+    statLabel: 'открытых',
   },
 ] satisfies Array<{
   title: string
   description: string
   href: string
+  accent: 'blue' | 'violet' | 'green' | 'amber'
+  icon: ReactNode
   queueKey:
     | 'help_requests_pending_moderation'
     | 'reports_pending_moderation'
     | 'verifications_pending_moderation'
+    | 'complaints_open'
   statLabel: string
 }>
 
@@ -43,12 +65,21 @@ export const DashboardPage = () => {
   const [dashboard, setDashboard] = useState<PartnerDashboardResponse | null>(null)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    partnersApi
-      .dashboard()
-      .then(setDashboard)
-      .catch((dashboardError: unknown) => setError(getErrorMessage(dashboardError)))
+  const load = useCallback(async () => {
+    try {
+      const response = await partnersApi.dashboard()
+      setDashboard(response)
+      setError('')
+    } catch (dashboardError: unknown) {
+      setError(getErrorMessage(dashboardError))
+    }
   }, [])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  useRealtimeRefresh(load, [load])
 
   return (
     <>
@@ -57,30 +88,58 @@ export const DashboardPage = () => {
         description="Очереди, которые требуют проверки, и быстрые переходы к ключевым разделам."
       />
       {error ? <StateBlock title="Не удалось загрузить показатели" description={error} /> : null}
-      <div className="dashboard-grid">
+      <Row gutter={[20, 20]}>
         {cards.map((card) => (
-          <Link key={card.href} to={card.href} className="dashboard-card">
-            <div className="dashboard-card__top">
-              <h2>{card.title}</h2>
-              <strong>{dashboard ? dashboard.queues[card.queueKey].total : '...'}</strong>
-            </div>
-            <p>{card.description}</p>
-            {dashboard ? <QueueBreakdown value={dashboard.queues[card.queueKey]} /> : null}
-            <small>{card.statLabel}</small>
-            <span>Перейти к очереди</span>
-          </Link>
+          <Col xs={24} md={12} xl={8} key={card.href}>
+            <Link to={card.href}>
+              <Card hoverable className={`dashboard-card dashboard-card--${card.accent}`}>
+                <Space align="center" className="dashboard-card__heading">
+                  <span className="dashboard-card__icon">{card.icon}</span>
+                  <Typography.Text className="dashboard-card__label">{card.title}</Typography.Text>
+                </Space>
+                <Statistic
+                  value={
+                    dashboard
+                      ? card.queueKey === 'complaints_open'
+                        ? dashboard.queues.complaints_open
+                        : dashboard.queues[card.queueKey].total
+                      : undefined
+                  }
+                />
+                <Typography.Paragraph className="dashboard-card__description">{card.description}</Typography.Paragraph>
+                {dashboard && card.queueKey !== 'complaints_open' ? (
+                  <QueueBreakdown value={dashboard.queues[card.queueKey]} />
+                ) : null}
+                <Typography.Text className="dashboard-card__footer">{card.statLabel}</Typography.Text>
+              </Card>
+            </Link>
+          </Col>
         ))}
-      </div>
-      <section className="detail-section dashboard-section">
-        <h2>Финансовая проверка</h2>
-        <p className="muted">
+      </Row>
+      <Card
+        title={
+          <Space align="center">
+            <span className="section-title-icon">
+              <DollarCircleOutlined />
+            </span>
+            Финансовая проверка
+          </Space>
+        }
+        className="dashboard-section"
+      >
+        <Typography.Paragraph type="secondary">
           Отдельная очередь материальных отчётов, где нужно проверить подтверждённые расходы или возвраты.
-        </p>
-        <Link to="/reports?queue=settlement-review" className="settlement-card">
-          <strong>{dashboard ? dashboard.queues.material_reports_awaiting_settlement_review : '...'}</strong>
-          <span>материальных отчётов ожидают финансовой проверки</span>
+        </Typography.Paragraph>
+        <Link to="/reports?queue=settlement-review">
+          <Card size="small" hoverable className="settlement-card">
+            <Statistic
+              value={dashboard ? dashboard.queues.material_reports_awaiting_settlement_review : undefined}
+              suffix="отчётов"
+            />
+            <Typography.Text type="secondary">ожидают финансовой проверки</Typography.Text>
+          </Card>
         </Link>
-      </section>
+      </Card>
     </>
   )
 }
@@ -92,17 +151,17 @@ const QueueBreakdown = ({
 }) => {
   if ('material' in value) {
     return (
-      <div className="queue-breakdown">
-        <span>Материальные: {value.material}</span>
-        <span>Социальные: {value.social}</span>
-      </div>
+      <Space wrap className="dashboard-card__breakdown">
+        <Typography.Text>Материальные: {value.material}</Typography.Text>
+        <Typography.Text>Социальные: {value.social}</Typography.Text>
+      </Space>
     )
   }
 
   return (
-    <div className="queue-breakdown">
-      <span>Получатели: {value.beneficiaries}</span>
-      <span>Волонтёры: {value.volunteers}</span>
-    </div>
+    <Space wrap className="dashboard-card__breakdown">
+      <Typography.Text>Бенефициары: {value.beneficiaries}</Typography.Text>
+      <Typography.Text>Волонтёры: {value.volunteers}</Typography.Text>
+    </Space>
   )
 }
