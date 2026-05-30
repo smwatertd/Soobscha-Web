@@ -1,3 +1,4 @@
+import { Spin } from 'antd'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
@@ -6,7 +7,7 @@ export const ProtectedRoute = () => {
   const location = useLocation()
 
   if (!isReady) {
-    return <div className="screen-loader">Загрузка сессии...</div>
+    return <Spin fullscreen tip="Загрузка сессии..." />
   }
 
   if (!isAuthenticated) {
