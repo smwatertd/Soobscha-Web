@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { ArrowLeftOutlined } from '@ant-design/icons'
+import { Alert, Button, Card, Form, Input, Typography } from 'antd'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
@@ -9,49 +10,42 @@ type LocationState = {
   }
 }
 
-const TEST_USERS = [
-  {
-    role: 'Партнёр',
-    login: 'Daniella_Mertz@hotmail.com',
-    password: 'Xhh0a94Iw48vtIk',
-    isAvailable: true,
-  },
-  {
-    role: 'Админ',
-    login: '—',
-    password: '—',
-    isAvailable: false,
-  },
-]
-
 export const LoginPage = () => {
-  const { isAuthenticated, login } = useAuth()
+  const { isAuthenticated, userRole, login } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const [identifier, setIdentifier] = useState('')
-  const [password, setPassword] = useState('')
+  const [form] = Form.useForm<{ identifier: string; password: string }>()
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />
+    return <Navigate to={userRole === 'ADMIN' ? '/admin' : '/'} replace />
   }
 
   const from = (location.state as LocationState | null)?.from?.pathname ?? '/'
+  const canGoBack = location.key !== 'default'
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const handleBack = () => {
+    if (canGoBack) {
+      navigate(-1)
+      return
+    }
+
+    window.history.back()
+  }
+
+  const handleSubmit = async (values: { identifier: string; password: string }) => {
     setError('')
     setIsSubmitting(true)
 
-    const normalizedIdentifier = identifier.trim()
+    const normalizedIdentifier = values.identifier.trim()
     const isEmail = normalizedIdentifier.includes('@')
 
     try {
       await login({
         email: isEmail ? normalizedIdentifier : null,
         phone_number: isEmail ? null : normalizedIdentifier,
-        password,
+        password: values.password,
       })
       navigate(from, { replace: true })
     } catch (loginError) {
@@ -63,57 +57,39 @@ export const LoginPage = () => {
 
   return (
     <main className="login-page">
-      <form className="login-card" onSubmit={handleSubmit}>
+      <Card className="login-card">
+        <Button
+          className="login-back-btn"
+          type="link"
+          icon={<ArrowLeftOutlined />}
+          onClick={handleBack}
+        >
+          Назад
+        </Button>
         <div>
-          <p className="eyebrow">Партнёрский backoffice</p>
-          <h1>Вход в кабинет</h1>
-          <p>Используйте email или телефон и пароль партнёра.</p>
+          <Typography.Text className="eyebrow">Сообща</Typography.Text>
+          <Typography.Title level={2}>Вход в кабинет</Typography.Title>
+          <Typography.Paragraph type="secondary">
+            Используйте email или телефон и пароль для входа в кабинет партнёра или администратора.
+          </Typography.Paragraph>
         </div>
-        <label>
-          Email или телефон
-          <input value={identifier} onChange={(event) => setIdentifier(event.target.value)} required />
-        </label>
-        <label>
-          Пароль
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </label>
-        {error ? <p className="form-error">{error}</p> : null}
-        <button className="button primary full-width" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Входим...' : 'Войти'}
-        </button>
-        <section className="test-users">
-          <div>
-            <h2>Тестовые пользователи</h2>
-            <p>Можно быстро заполнить форму тестовыми данными.</p>
-          </div>
-          {TEST_USERS.map((user) => (
-            <div key={user.role} className="test-user-card">
-              <div>
-                <strong>{user.role}</strong>
-                <span>{user.login}</span>
-                <small>{user.password}</small>
-              </div>
-              <button
-                type="button"
-                className="button secondary"
-                disabled={!user.isAvailable}
-                onClick={() => {
-                  setIdentifier(user.login)
-                  setPassword(user.password)
-                  setError('')
-                }}
-              >
-                {user.isAvailable ? 'Заполнить' : 'Нет данных'}
-              </button>
-            </div>
-          ))}
-        </section>
-      </form>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          <Form.Item
+            label="Email или телефон"
+            name="identifier"
+            rules={[{ required: true, message: 'Укажите email или телефон' }]}
+          >
+            <Input autoComplete="username" />
+          </Form.Item>
+          <Form.Item label="Пароль" name="password" rules={[{ required: true, message: 'Укажите пароль' }]}>
+            <Input.Password autoComplete="current-password" />
+          </Form.Item>
+          {error ? <Alert type="error" message={error} showIcon className="login-error" /> : null}
+          <Button type="primary" htmlType="submit" loading={isSubmitting} block>
+            Войти
+          </Button>
+        </Form>
+      </Card>
     </main>
   )
 }
