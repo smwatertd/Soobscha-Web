@@ -1,33 +1,41 @@
 {
-  "name": "web",
+  "name": "soobscha-web",
   "version": "1.0.0",
-  "description": "Partner backoffice for the social help platform",
+  "description": "Веб-кабинет платформы «Сообща» — партнёр и администратор",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "vite --mode dev",
+    "build": "tsc -b && vite build --mode prod",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview --mode prod",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@ant-design/icons": "^6.2.3",
+    "antd": "^6.4.2",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^10.4.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.3",
-    "vite": "^8.0.13"
+    "vite": "^8.0.13",
+    "vitest": "^4.1.7"
   }
 }
