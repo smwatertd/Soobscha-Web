@@ -1,0 +1,16 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_YANDEX_MAPS_JS_API_KEY: ${VITE_YANDEX_MAPS_JS_API_KEY:-}
+        VITE_YANDEX_GEOCODER_API_KEY: ${VITE_YANDEX_GEOCODER_API_KEY:-}
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    environment:
+      API_UPSTREAM: ${API_UPSTREAM:-host.docker.internal:80}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
