@@ -1,13 +1,9 @@
 import type { ReactNode } from 'react'
+import { Card } from 'antd'
 
 type DetailSectionProps = {
-  title: string
+  title: ReactNode
   children: ReactNode
 }
 
-export const DetailSection = ({ title, children }: DetailSectionProps) => (
-  <section className="detail-section">
-    <h2>{title}</h2>
-    {children}
-  </section>
-)
+export const DetailSection = ({ title, children }: DetailSectionProps) => <Card title={title}>{children}</Card>
