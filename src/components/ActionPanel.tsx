@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { CheckCircleOutlined, CloseCircleOutlined, RollbackOutlined, StopOutlined, WarningOutlined } from '@ant-design/icons'
+import { Alert, Button, Space, Typography } from 'antd'
 import type { CodeLabel, ModerationAction } from '../types/api'
 import { ACTION_LABELS, normalizeAction } from '../utils/labels'
 import { ReasonModal } from './ReasonModal'
@@ -9,9 +11,10 @@ type ActionPanelProps = {
   reasonCodeOptions?: Partial<Record<string, CodeLabel[]>>
   onApprove?: () => Promise<void>
   onReasonAction?: (action: string, reason: string, code?: string) => Promise<void>
+  subject?: string
 }
 
-const REASON_ACTIONS = ['reject', 'return_to_rework', 'return-to-rework', 'cancel', 'interrupt']
+const REASON_ACTIONS = ['reject', 'return_to_rework', 'return-to-rework', 'cancel', 'interrupt', 'revoke']
 
 export const ActionPanel = ({
   actions,
@@ -19,6 +22,7 @@ export const ActionPanel = ({
   reasonCodeOptions = {},
   onApprove,
   onReasonAction,
+  subject = 'сущности',
 }: ActionPanelProps) => {
   const availableActions = (actions?.length ? actions : fallbackActions).map((action) => normalizeAction(String(action)))
   const [pendingAction, setPendingAction] = useState<string | null>(null)
@@ -26,7 +30,7 @@ export const ActionPanel = ({
   const [error, setError] = useState('')
 
   if (!availableActions.length) {
-    return <p className="muted">Для текущего статуса нет доступных действий.</p>
+    return <Typography.Text type="secondary">Для текущего статуса нет доступных действий.</Typography.Text>
   }
 
   const approve = async () => {
@@ -47,31 +51,62 @@ export const ActionPanel = ({
   }
 
   return (
-    <div className="action-panel">
-      <div className="action-panel__buttons">
+    <Space direction="vertical" size={12} style={{ width: '100%' }}>
+      <Space wrap>
         {availableActions.map((action) =>
           action === 'approve' ? (
-            <button key={action} className="button success" onClick={approve} disabled={isApproving || !onApprove}>
-              {isApproving ? 'Одобряем...' : ACTION_LABELS[action]}
-            </button>
+            <Button
+              key={action}
+              type="primary"
+              icon={<CheckCircleOutlined />}
+              onClick={approve}
+              loading={isApproving}
+              disabled={!onApprove}
+            >
+              {ACTION_LABELS[action]}
+            </Button>
           ) : REASON_ACTIONS.includes(action) ? (
-            <button key={action} className="button secondary" onClick={() => setPendingAction(action)}>
+            <Button
+              key={action}
+              icon={getActionIcon(action)}
+              onClick={() => setPendingAction(action)}
+              danger={action === 'reject' || action === 'revoke'}
+            >
               {ACTION_LABELS[action] ?? action}
-            </button>
+            </Button>
           ) : null,
         )}
-      </div>
-      {error ? <p className="form-error">{error}</p> : null}
+      </Space>
+      {error ? <Alert type="error" message={error} showIcon /> : null}
       {pendingAction ? (
         <ReasonModal
           title={ACTION_LABELS[pendingAction] ?? pendingAction}
           submitLabel={ACTION_LABELS[pendingAction] ?? 'Подтвердить'}
+          action={pendingAction}
           code={reasonCodeOptions[pendingAction]?.[0]?.code}
           codeOptions={reasonCodeOptions[pendingAction]}
           onClose={() => setPendingAction(null)}
-          onSubmit={(reason, code) => onReasonAction?.(pendingAction, reason, code) ?? Promise.resolve()}
+          onSubmit={async (reason, code) => {
+            await (onReasonAction?.(pendingAction, reason, code) ?? Promise.resolve())
+          }}
         />
       ) : null}
-    </div>
+    </Space>
   )
+}
+
+const getActionIcon = (action: string) => {
+  if (action === 'reject') {
+    return <CloseCircleOutlined />
+  }
+
+  if (action === 'return_to_rework' || action === 'return-to-rework') {
+    return <RollbackOutlined />
+  }
+
+  if (action === 'cancel' || action === 'interrupt' || action === 'revoke') {
+    return <StopOutlined />
+  }
+
+  return <WarningOutlined />
 }
