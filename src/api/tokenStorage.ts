@@ -9,6 +9,7 @@ export const tokenStorage = {
   setTokens: (tokens: TokensResponse) => {
     localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token)
     localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token)
+    window.dispatchEvent(new Event('partner_tokens_updated'))
   },
   clear: () => {
     localStorage.removeItem(ACCESS_TOKEN_KEY)

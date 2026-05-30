@@ -1,5 +1,8 @@
 import type { TokensResponse } from '../types/api'
+import { isJwtExpiringSoon } from '../utils/jwt'
 import { tokenStorage } from './tokenStorage'
+
+const ACCESS_TOKEN_REFRESH_BUFFER_MS = 30_000
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
@@ -64,26 +67,65 @@ const parseResponse = async <T>(response: Response): Promise<T> => {
   return (await response.text()) as T
 }
 
-const refreshTokens = async () => {
-  const refreshToken = tokenStorage.getRefreshToken()
+export const isAuthRefreshError = (error: unknown) => error instanceof ApiError && error.status === 401
 
-  if (!refreshToken) {
+const refreshTokens = async () => {
+  if (!refreshRequest) {
+    refreshRequest = (async () => {
+      const refreshToken = tokenStorage.getRefreshToken()
+
+      if (!refreshToken) {
+        throw new ApiError(401, 'Сессия истекла', null)
+      }
+
+      try {
+        const tokens = await apiRequest<TokensResponse>('/api/auth/refresh', {
+          method: 'POST',
+          body: { refresh_token: refreshToken },
+          skipAuth: true,
+          skipAuthRefresh: true,
+        })
+        tokenStorage.setTokens(tokens)
+
+        return tokens
+      } catch (error) {
+        if (isAuthRefreshError(error)) {
+          notifySessionExpired()
+        }
+
+        throw error
+      }
+    })().finally(() => {
+      refreshRequest = null
+    })
+  }
+
+  return refreshRequest
+}
+
+/** Обновление пары токенов (один запрос в полёте — важно при ротации refresh на бэкенде). */
+export const refreshAccessToken = () => refreshTokens()
+
+/** Refresh только если access-токен скоро истечёт. */
+export const ensureFreshAccessToken = async () => {
+  const accessToken = tokenStorage.getAccessToken()
+
+  if (!accessToken) {
     throw new ApiError(401, 'Сессия истекла', null)
   }
 
-  refreshRequest ??= apiRequest<TokensResponse>('/api/auth/refresh', {
-    method: 'POST',
-    body: { refresh_token: refreshToken },
-    skipAuth: true,
-    skipAuthRefresh: true,
-  }).finally(() => {
-    refreshRequest = null
-  })
+  if (!isJwtExpiringSoon(accessToken, ACCESS_TOKEN_REFRESH_BUFFER_MS)) {
+    return accessToken
+  }
 
-  const tokens = await refreshRequest
-  tokenStorage.setTokens(tokens)
+  const tokens = await refreshTokens()
 
-  return tokens
+  return tokens.access_token
+}
+
+export const notifySessionExpired = () => {
+  tokenStorage.clear()
+  unauthorizedHandler?.()
 }
 
 export async function apiRequest<T>(
@@ -114,8 +156,9 @@ export async function apiRequest<T>(
 
       return apiRequest<T>(path, { ...options, skipAuthRefresh: true }, params)
     } catch (error) {
-      tokenStorage.clear()
-      unauthorizedHandler?.()
+      if (isAuthRefreshError(error)) {
+        notifySessionExpired()
+      }
 
       throw error
     }
